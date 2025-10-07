@@ -11,94 +11,90 @@ class OtpVerification extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return GetBuilder<OtpVerifyController>(
       init: OtpVerifyController(),
-        builder: (controller){
-
-      return Scaffold(
-        body: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Spacer(),
-              Text(
-                'OTP Verification',
-                style: GoogleFonts.lora(
-                    fontSize: 24,
-                    color: Constants.instance.primary
-                ),
+      builder: (controller) {
+        return Scaffold(
+          backgroundColor: const Color(0xffF5F5F4),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(),
+                  Text(
+                    'OTP Verification',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Constants.instance.primary),
+                  ),
+                  const SizedBox(height: 10),
+                  CustomRichText(
+                    text1: 'Enter the 4-digit OTP sent to your Mobile Number',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 30),
+                  PinCodeTextField(
+                    highlight: true,
+                    maxLength: 4,
+                    pinBoxWidth: 45,
+                    pinBoxHeight: 45,
+                    pinBoxRadius: 6,
+                    pinBoxBorderWidth: 0.75,
+                    wrapAlignment: WrapAlignment.center,
+                    highlightPinBoxColor: Colors.white,
+                    highlightColor: Constants.instance.primary,
+                    defaultBorderColor: Colors.grey.shade500,
+                    keyboardType: TextInputType.number,
+                    pinTextStyle: const TextStyle(fontSize: 14),
+                    pinBoxOuterPadding: const EdgeInsets.symmetric(horizontal: 5),
+                    pinBoxColor: Colors.transparent,
+                    errorBorderColor: Colors.redAccent,
+                    hasTextBorderColor: Colors.black,
+                    controller: controller.verificationCodeController,
+                  ),
+                  const SizedBox(height: 40),
+                  Obx(
+                    () => AnimatedScale(
+                      scale: controller.isLoading.value ? 0.98 : 1.0,
+                      duration: const Duration(milliseconds: 180),
+                      child: ElevatedButton(
+                        onPressed: controller.isLoading.value
+                            ? null
+                            : () async {
+                                await controller.verifyOtp();
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Constants.instance.primary,
+                          minimumSize: const Size(double.infinity, 20),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: controller.isLoading.value
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                            : Text(
+                                'Verify',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                              ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Obx(
+                    () => CustomRichText(
+                      text1: 'Didn’t receive the OTP?  ',
+                      text2: controller.countdown.value > 0 ? 'Resend OTP in ${controller.countdown.value}s' : 'Resend OTP',
+                      style1: TextStyle(fontSize: 15, color: Colors.grey.shade900),
+                      style2: TextStyle(fontSize: 15, color: controller.isResendEnabled.value ? Constants.instance.primary : Colors.grey.shade400),
+                      onTap2: controller.isResendEnabled.value ? () => controller.resendOtp() : null,
+                    ),
+                  ),
+                  const Spacer(),
+                ],
               ),
-              SizedBox(height: 10),
-              CustomRichText(
-                text1: 'Enter the 4-digit OTP sent to your Mobile Number',
-                style: GoogleFonts.lora(
-                  fontSize: 13,
-                  color: Colors.grey.shade700,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 30),
-              PinCodeTextField(
-                highlight: true,
-                maxLength: 4,
-                pinBoxWidth: 45,
-                pinBoxHeight: 45,
-                pinBoxRadius: 6,
-                pinBoxBorderWidth: 0.75,
-                wrapAlignment: WrapAlignment.center,
-                highlightPinBoxColor: Colors.white,
-                highlightColor: Constants.instance.primary,
-                defaultBorderColor: Colors.grey.shade500,
-                keyboardType: TextInputType.number,
-                pinTextStyle: TextStyle(fontSize: 14),
-                pinBoxOuterPadding: const EdgeInsets.symmetric(horizontal: 5),
-                pinBoxColor: Colors.transparent,
-                errorBorderColor: Colors.redAccent,
-                hasTextBorderColor: Colors.black,
-                controller: controller.verificationCodeController,
-              ),
-              const SizedBox(height: 40),
-              MaterialButton(onPressed: (){
-                controller.verifyOtp();
-              },
-                minWidth: double.infinity,
-                height: 55,
-                color: Constants.instance.primary,
-                shape: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10)
-                ),
-                child: Text("Verify",style: GoogleFonts.lora(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18
-                ),),
-              ),
-              const SizedBox(height: 30),
-              CustomRichText(
-                text1: 'Didn’t receive the OTP?  ',
-                text2: 'Resend OTP',
-                style1: GoogleFonts.lora(
-                  fontSize: 13,
-                  color: Colors.grey.shade900,
-                ),
-                style2: GoogleFonts.lora(
-                  fontSize: 13,
-                  // color: controller.isResendEnabled.value ? Constants.instance.secondary : Constants.instance.grey400,
-                ),
-                // onTap2: controller.isResendEnabled.value ? controller.resendOtp : null,
-              ),
-              Spacer(),
-            ],
+            ),
           ),
-        ),
-      );
-    });
-    // return Obx(
-    //       () {
-    //     return
-    //   },
-    // );
+        );
+      },
+    );
   }
 }

@@ -1,5 +1,4 @@
 
-
 class RouteName {
   static const String splash = '/splash';
   static const String home = '/HomeScreen';
@@ -9,8 +8,4 @@ class RouteName {
   static const String otpVerification = '/OtpVerification';
   static const String register = '/Register';
 
-
-  //Traveller
-
-  static const String travelHomeScreen = '/TravelHomeScreen';
 }
