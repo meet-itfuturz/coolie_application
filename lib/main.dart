@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:coolie_application/firebase_options.dart';
 import 'package:coolie_application/repositories/authentication_repo.dart';
 import 'package:coolie_application/routes/route_name.dart';
@@ -45,7 +47,6 @@ void main() async {
   runApp(const MyApp());
 }
 
-
 String? lastHandledMessageId;
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -67,6 +68,7 @@ void terminatedNotification() async {
 }
 
 void _handleNotificationClick(RemoteMessage message) async {
+  log("Notification data: ${message.data["bookingId"]}");
   if (Get.isRegistered<HomeController>()) {
     // final notificationsCtrl = Get.find<TravelHomeController>();
     // await notificationsCtrl.getNotifications();
