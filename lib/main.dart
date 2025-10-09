@@ -70,10 +70,12 @@ void terminatedNotification() async {
 void _handleNotificationClick(RemoteMessage message) async {
   log("Notification data: ${message.data["bookingId"]}");
   if (Get.isRegistered<HomeController>()) {
-    // final notificationsCtrl = Get.find<TravelHomeController>();
-    // await notificationsCtrl.getNotifications();
+    final homeCtrl = Get.find<HomeController>();
+    homeCtrl.bookingId.value = message.data["bookingId"];
+    log("Updated bookingId in HomeController: ${homeCtrl.bookingId.value}");
   } else {
-    Get.toNamed(RouteName.home);
+    log("HomeController not registered, navigating to Home with bookingId");
+    Get.toNamed(RouteName.home, arguments: {"bookingId": message.data["bookingId"]});
   }
 }
 

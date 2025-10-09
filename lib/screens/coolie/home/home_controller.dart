@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:coolie_application/models/coolie_user_profile.dart';
 import 'package:coolie_application/routes/route_name.dart';
 import 'package:coolie_application/services/app_storage.dart';
@@ -15,6 +17,7 @@ import '../../../utils/app_constants.dart';
 class HomeController extends GetxController {
   final AuthenticationRepo _authRepo = AuthenticationRepo();
   final checkStatuss = ''.obs;
+  final bookingId = ''.obs;
 
   Rx<GetPassengerCoolieModel> passengerDetails = GetPassengerCoolieModel().obs;
   final verificationCodeController = TextEditingController();
@@ -28,6 +31,10 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    final args = Get.arguments;
+    if (args != null && args["bookingId"] != null) {
+      bookingId.value = args["bookingId"];
+    }
     fetchUserProfile();
     getPassengerData();
     // checkStatus();
