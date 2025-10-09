@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "679914771469",
+    "project_id": "coolie-9d46e",
+    "storage_bucket": "coolie-9d46e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:679914771469:android:9920a0031e5bb3e381f144",
+        "android_client_info": {
+          "package_name": "com.example.coolie_application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkJ0DkSq62-MXoZLH42Z0uOY4SMTMIb4A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:679914771469:android:9387400f8f93a24c81f144",
+        "android_client_info": {
+          "package_name": "com.itf.coolie"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkJ0DkSq62-MXoZLH42Z0uOY4SMTMIb4A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

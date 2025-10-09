@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../../services/app_storage.dart';
 import '../../../services/app_toasting.dart';
 import '../../../services/helper.dart';
+import '../../../services/notification_service.dart';
 import '../auth_service.dart';
 
 class OtpVerifyController extends GetxController {
@@ -49,8 +50,7 @@ class OtpVerifyController extends GetxController {
   }
 
   Future<void> _getFcmToken() async {
-    // Replace with actual FCM token retrieval logic
-    // fcmToken = await helper.getFcmToken(); // Assume helper has this method
+    fcmToken = (await notificationService.getToken())!;
     debugPrint("FCM Token: $fcmToken");
   }
 

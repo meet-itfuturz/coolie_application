@@ -14,7 +14,6 @@ class CheckInController extends GetxController {
   final isLoading = RxBool(false);
   final AuthenticationRepo authenticationRepo = Get.find();
 
-  final mobileKey = GlobalKey<FormState>();
   TextEditingController mobileNumberController = TextEditingController();
   final isConfirmEnabled = false.obs;
   final isEnable = false.obs;
@@ -22,6 +21,20 @@ class CheckInController extends GetxController {
   @override
   void onInit() async {
     super.onInit();
+    _loadMobileNumber();
+  }
+
+  @override
+  void onClose() {
+    mobileNumberController.dispose();
+    super.onClose();
+  }
+
+  void resetState() {
+    coolieImage.value = null;
+    mobileNumberController.clear();
+    isLoading.value = false;
+    isEnable.value = false;
     _loadMobileNumber();
   }
 
@@ -58,8 +71,8 @@ class CheckInController extends GetxController {
     return coolieImage.value != null && mobileNumberController.text.length == 10 && !isLoading.value;
   }
 
-  Future<void> validateFace() async {
-    if (!mobileKey.currentState!.validate()) {
+  Future<void> validateFace(GlobalKey<FormState> formKey) async {
+    if (!formKey.currentState!.validate()) {
       return;
     }
 
@@ -78,7 +91,7 @@ class CheckInController extends GetxController {
       // Add image as file
       if (coolieImage.value != null) {
         formData.files.add(
-          MapEntry('imageData', await dio.MultipartFile.fromFile(coolieImage.value!.path, filename: 'coolie_${DateTime.now().millisecondsSinceEpoch}.jpg')),
+          MapEntry('file', await dio.MultipartFile.fromFile(coolieImage.value!.path, filename: 'coolie_${DateTime.now().millisecondsSinceEpoch}.jpg')),
         );
       }
 

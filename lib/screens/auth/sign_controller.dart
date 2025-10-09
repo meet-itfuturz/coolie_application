@@ -1,3 +1,4 @@
+import '/services/notification_service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:coolie_application/routes/route_name.dart';
@@ -35,7 +36,7 @@ class SignController extends GetxController {
   }
 
   Future<void> _getFcmToken() async {
-    // fcmToken = await helper.getFcmToken(); // Assume helper has this method
+    fcmToken = (await notificationService.getToken())!;
     debugPrint("FCM Token: $fcmToken");
   }
 

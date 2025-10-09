@@ -1,4 +1,4 @@
-package com.example.coolie_application
+package com.itf.coolie
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -8,12 +8,14 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../widgets/text_box_widegt.dart';
 
 class CheckIn extends StatelessWidget {
-  const CheckIn({super.key});
+  CheckIn({super.key});
+
+  final CheckInController controller = Get.put(CheckInController());
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<CheckInController>(
-      init: CheckInController(),
       builder: (controller) {
         return Scaffold(
           resizeToAvoidBottomInset: false,
@@ -84,7 +86,7 @@ class CheckIn extends StatelessWidget {
                         children: [
                           const SizedBox(height: 20),
                           Form(
-                            key: controller.mobileKey,
+                            key: _formKey,
                             child: TextBoxWidget(
                               enabled: controller.isEnable.value,
                               controller: controller.mobileNumberController,
@@ -118,8 +120,8 @@ class CheckIn extends StatelessWidget {
                           return GestureDetector(
                             onTap: isEnabled
                                 ? () {
-                                    if (controller.mobileKey.currentState!.validate()) {
-                                      controller.validateFace();
+                                    if (_formKey.currentState!.validate()) {
+                                      controller.validateFace(_formKey);
                                     }
                                   }
                                 : null,
