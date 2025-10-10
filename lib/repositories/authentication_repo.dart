@@ -78,9 +78,25 @@ class AuthenticationRepo {
     }
   }
 
-  Future<dynamic> bookPassenger(bookingId) async {
+  Future<dynamic> getOff() async {
     try {
-      final response = await apiManager.post(NetworkConstants.bookingAction, data: {"bookingId": bookingId, "action": "accept"});
+      final response = await apiManager.post(NetworkConstants.jobOff, data: {});
+
+      if (response.status != 200) {
+        AppToasting.showWarning(response.message);
+        return null;
+      }
+      AppToasting.showSuccess(response.message);
+      return response.data;
+    } catch (err) {
+      AppToasting.showError('Error fetching GetPassenger: ${err.toString()}');
+      return null;
+    }
+  }
+
+  Future<dynamic> bookPassenger(String bookingId, String sessionId) async {
+    try {
+      final response = await apiManager.post(NetworkConstants.bookingAction, data: {"bookingId": bookingId, "sessionId": sessionId, "action": "accept"});
 
       if (response.status != 200) {
         AppToasting.showWarning(response.data?.message ?? 'Failed to fetch bookings');

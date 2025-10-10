@@ -30,6 +30,7 @@ class CheckIn extends StatelessWidget {
             ),
             centerTitle: true,
             title: Text(
+              // controller.isCheckedIn.value ? "Check In" : "Check Out",
               "Check In",
               style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
             ),
@@ -130,7 +131,11 @@ class CheckIn extends StatelessWidget {
                               height: 58,
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
-                                  colors: isEnabled ? [Constants.instance.primary, Constants.instance.primary] : [Colors.grey, Colors.grey],
+                                  colors: isEnabled
+                                      // ? controller.isCheckedIn.value
+                                      ? [Constants.instance.apple, Constants.instance.apple]
+                                      // : [Constants.instance.primary, Constants.instance.primary]
+                                      : [Colors.grey, Colors.grey],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
@@ -145,6 +150,7 @@ class CheckIn extends StatelessWidget {
                                         child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                                       )
                                     : Text(
+                                        // controller.isCheckedIn.value ? "Check In" : "Check Out",
                                         "Check In",
                                         style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1, color: Colors.white),
                                       ),

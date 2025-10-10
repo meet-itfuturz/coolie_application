@@ -21,44 +21,71 @@ void main() async {
   await GetStorage.init();
   WidgetsFlutterBinding.ensureInitialized();
   await loadRepositories();
+
   if (Firebase.apps.isEmpty) {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   } else {
     Firebase.app();
   }
+
+  await notificationService.init();
+  await requestNotificationPermission();
+
+  final fcmToken = await FirebaseMessaging.instance.getToken();
+  log("FCM Token: $fcmToken");
+
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  FirebaseMessaging.onMessage.listen(_firebaseMessagingBackgroundHandler);
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    _handleNotificationClick(message);
-  });
-  terminatedNotification();
+  FirebaseMessaging.onMessage.listen(_onForegroundMessage);
+  FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
+
+  await terminatedNotification();
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(kReleaseMode);
+
   FlutterError.onError = (errorDetails) {
     if (kReleaseMode) {
       FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
     }
   };
+
   PlatformDispatcher.instance.onError = (error, stack) {
     if (kReleaseMode) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     }
     return true;
   };
+
   runApp(const MyApp());
 }
 
 String? lastHandledMessageId;
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await GetStorage.init();
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  }
+
   if (message.messageId != null && message.messageId != lastHandledMessageId) {
     lastHandledMessageId = message.messageId;
     await notificationService.init();
     notificationService.showRemoteNotificationAndroid(message);
-    _handleNotificationClick(message);
+    log("Background message received: ${message.data}");
   }
 }
 
-void terminatedNotification() async {
+void _onForegroundMessage(RemoteMessage message) async {
+  if (message.messageId != null && message.messageId != lastHandledMessageId) {
+    lastHandledMessageId = message.messageId;
+    notificationService.showRemoteNotificationAndroid(message);
+    log("Foreground message received: ${message.data}");
+  }
+}
+
+void _onMessageOpenedApp(RemoteMessage message) {
+  _handleNotificationClick(message);
+}
+
+Future<void> terminatedNotification() async {
   RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
   if (initialMessage != null && initialMessage.messageId != lastHandledMessageId) {
     lastHandledMessageId = initialMessage.messageId;
@@ -68,14 +95,48 @@ void terminatedNotification() async {
 }
 
 void _handleNotificationClick(RemoteMessage message) async {
-  log("Notification data: ${message.data["bookingId"]}");
-  if (Get.isRegistered<HomeController>()) {
-    final homeCtrl = Get.find<HomeController>();
-    homeCtrl.bookingId.value = message.data["bookingId"];
-    log("Updated bookingId in HomeController: ${homeCtrl.bookingId.value}");
+  log("Notification data: ${message.data}");
+  String? bookingId = message.data["bookingId"];
+
+  if (bookingId != null) {
+    log("Handling notification with bookingId: $bookingId");
+
+    // Wait a bit for the app to initialize
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (Get.isRegistered<HomeController>()) {
+      final homeCtrl = Get.find<HomeController>();
+      homeCtrl.bookingId.value = bookingId;
+      log("Updated bookingId in HomeController: ${homeCtrl.bookingId.value}");
+      homeCtrl.onInit();
+    } else {
+      log("HomeController not registered, navigating to Home with bookingId");
+      Get.toNamed(RouteName.home, arguments: {"bookingId": bookingId});
+    }
+  }
+}
+
+Future<void> requestNotificationPermission() async {
+  final FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    announcement: false,
+  );
+
+  log('Notification permission status: ${settings.authorizationStatus}');
+
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    log('Notification permission granted');
+  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+    log('Provisional notification permission granted');
   } else {
-    log("HomeController not registered, navigating to Home with bookingId");
-    Get.toNamed(RouteName.home, arguments: {"bookingId": message.data["bookingId"]});
+    log('Notification permission denied');
   }
 }
 

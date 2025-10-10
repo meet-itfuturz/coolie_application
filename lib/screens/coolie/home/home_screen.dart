@@ -1,4 +1,5 @@
 import 'package:coolie_application/api%20constants/network_constants.dart';
+import 'package:coolie_application/models/get_passenger_coolie_model.dart';
 import 'package:coolie_application/routes/route_name.dart';
 import 'package:coolie_application/utils/app_constants.dart';
 import 'package:flutter/material.dart';
@@ -56,6 +57,7 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () {
                   controller.fetchUserProfile();
                   controller.getPassengerData();
+                  controller.update();
                 },
                 icon: const Icon(Icons.refresh_rounded, color: Colors.white),
                 tooltip: 'Refresh',
@@ -68,6 +70,7 @@ class HomeScreen extends StatelessWidget {
           onRefresh: () async {
             await controller.fetchUserProfile();
             await controller.getPassengerData();
+            controller.update();
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -107,7 +110,7 @@ class HomeScreen extends StatelessWidget {
                 style: GoogleFonts.poppins(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              _buildStatusBadge(controller),
+              // _buildStatusBadge(controller),
             ],
           );
         }),
@@ -208,7 +211,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBookingCard(BuildContext context, HomeController controller, booking) {
+  Widget _buildBookingCard(BuildContext context, HomeController controller, Booking booking) {
     return GestureDetector(
       onTap: () {
         _showBookingDetailsBottomSheet(
@@ -339,7 +342,7 @@ class HomeScreen extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Column(children: [_buildHeader(context, controller), const SizedBox(height: 24), _buildPunchButton(context)]),
+          child: Column(children: [_buildHeader(context, controller), const SizedBox(height: 24), _buildPunchButton(context, controller)]),
         ),
       ),
     );
@@ -373,39 +376,55 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPunchButton(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Constants.instance.apple, Constants.instance.apple.withOpacity(0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Constants.instance.apple.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: ElevatedButton(
-        onPressed: () => Get.toNamed(RouteName.checkIn),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          minimumSize: const Size(double.infinity, 55),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.login_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            Text(
-              "Check In",
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, letterSpacing: 0.5, fontSize: 16, color: Colors.white),
+  Widget _buildPunchButton(BuildContext context, HomeController controller) {
+    return Obx(() {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: controller.isCheckedIn.value
+                ? [Constants.instance.primary, Constants.instance.primary.withOpacity(0.8)]
+                : [Constants.instance.apple, Constants.instance.apple.withOpacity(0.8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: controller.isCheckedIn.value ? Constants.instance.apple.withOpacity(0.3) : Constants.instance.primary.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-      ),
-    );
+        child: ElevatedButton(
+          onPressed: () {
+            if (controller.isCheckedIn.value) {
+              controller.checkOut();
+            } else {
+              Get.toNamed(RouteName.checkIn, arguments: controller.isCheckedIn);
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            minimumSize: const Size(double.infinity, 55),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(controller.isCheckedIn.value ? Icons.logout_rounded : Icons.login_rounded, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                controller.isCheckedIn.value ? "Check Out" : "Check In",
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, letterSpacing: 0.5, fontSize: 16, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildModernDrawer(HomeController controller) {
@@ -673,7 +692,7 @@ class HomeScreen extends StatelessWidget {
                                 ),
                               ],
                             );
-                          } else if (controllerH.checkStatuss.value == 'accepted') {
+                          } else if (controllerH.checkStatuss.value == 'in-progress') {
                             return SizedBox(
                               width: double.infinity,
                               child: Container(

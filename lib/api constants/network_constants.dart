@@ -14,6 +14,7 @@ class NetworkConstants {
   static const String getCoolieProfile = 'api/users/collieProfile';
   static const String faceDetect = 'api/users/faceLogin';
   static const String getNextBooking = 'api/users/getNextBooking';
+  static const String jobOff = 'api/users/jobOff';
   static const String bookingAction = 'api/users/bookingAction';
   static const String startService = 'api/users/startService';
   static const String completeService = 'api/users/completeService';

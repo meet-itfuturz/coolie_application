@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:coolie_application/routes/route_name.dart';
 import 'package:dio/dio.dart' as dio;
@@ -17,10 +18,19 @@ class CheckInController extends GetxController {
   TextEditingController mobileNumberController = TextEditingController();
   final isConfirmEnabled = false.obs;
   final isEnable = false.obs;
+  // final isCheckedIn = false.obs;
 
   @override
   void onInit() async {
     super.onInit();
+    // final args = Get.arguments;
+    // log("===============arguments: $args==============");
+    // if (args != null) {
+    //   isCheckedIn.value = args;
+    // } else {
+    //   Get.snackbar('Error', 'Checked in is not coming');
+    //   Get.back();
+    // }
     _loadMobileNumber();
   }
 
