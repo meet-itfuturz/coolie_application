@@ -70,6 +70,7 @@ class HomeScreen extends StatelessWidget {
           onRefresh: () async {
             await controller.fetchUserProfile();
             await controller.getPassengerData();
+            await controller.checkStatus();
             controller.update();
           },
           child: SingleChildScrollView(
@@ -78,7 +79,6 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeaderSection(controller),
-                _buildCheckInOutCard(context, controller),
                 const SizedBox(height: 24),
                 _buildBookingListSection(context, controller),
               ],
@@ -109,8 +109,9 @@ class HomeScreen extends StatelessWidget {
                 profile?.name ?? "Coolie",
                 style: GoogleFonts.poppins(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 16),
-              // _buildStatusBadge(controller),
+              const SizedBox(height: 20),
+              // Check In / Check Out Buttons
+              _buildCheckInOutButtons(controller),
             ],
           );
         }),
@@ -118,33 +119,104 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(HomeController controller) {
+  Widget _buildCheckInOutButtons(HomeController controller) {
     return Obx(() {
-      final status = controller.checkStatuss.value;
-      final isActive = status.isNotEmpty;
-
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isActive ? Colors.green : Colors.orange, width: 1.5),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: isActive ? Colors.green : Colors.orange, shape: BoxShape.circle),
+      return Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: controller.isCheckedIn.value
+                      ? [Colors.white.withOpacity(0.3), Colors.white.withOpacity(0.2)]
+                      : [Constants.instance.apple, Constants.instance.apple.withOpacity(0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: controller.isCheckedIn.value
+                    ? null
+                    : () {
+                        Get.toNamed(RouteName.checkIn, arguments: controller.isCheckedIn);
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  disabledBackgroundColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.login_rounded, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Check In",
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              isActive ? "Active Service" : "Available",
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: !controller.isCheckedIn.value
+                      ? [Colors.white.withOpacity(0.3), Colors.white.withOpacity(0.2)]
+                      : [Constants.instance.instagramRed, Constants.instance.instagramRed.withOpacity(0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: !controller.isCheckedIn.value
+                    ? null
+                    : () {
+                        controller.checkOut();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  disabledBackgroundColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.logout_rounded, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Check Out",
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       );
     });
   }
@@ -212,91 +284,197 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildBookingCard(BuildContext context, HomeController controller, Booking booking) {
-    return GestureDetector(
-      onTap: () {
-        _showBookingDetailsBottomSheet(
-          context,
-          booking.passengerId?.name ?? "Unknown",
-          booking.passengerId?.mobileNo ?? "N/A",
-          controller.formatBookingTime(booking.timestamp?.bookedAt.toString()),
-          booking.fare!.baseFare.toString(),
-          booking.status ?? "Pending",
-          controller,
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Constants.instance.primary, Constants.instance.primary.withOpacity(0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Constants.instance.primary.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Constants.instance.primary, Constants.instance.primary.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Column(
-          children: [
-            Row(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Constants.instance.primary.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))],
+                ),
+                child: CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.blue[50],
+                  child: const Icon(Icons.person_rounded, color: Colors.blue, size: 32),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      booking.passengerId?.name ?? "Unknown",
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, color: Colors.white70, size: 14),
+                        const SizedBox(width: 4),
+                        Text(booking.passengerId?.mobileNo ?? "N/A", style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: _getStatusColor(booking.status ?? "Pending"), borderRadius: BorderRadius.circular(20)),
+                child: Text(
+                  booking.status ?? "Pending",
+                  style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))],
-                  ),
-                  child: CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.blue[50],
-                    child: const Icon(Icons.person_rounded, color: Colors.blue, size: 32),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        booking.passengerId?.name ?? "Unknown",
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.phone, color: Colors.white70, size: 14),
-                          const SizedBox(width: 4),
-                          Text(booking.passengerId?.mobileNo ?? "N/A", style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: _getStatusColor(booking.status ?? "Pending"), borderRadius: BorderRadius.circular(20)),
-                  child: Text(
-                    booking.status ?? "Pending",
-                    style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
-                  ),
-                ),
+                _buildInfoChip(Icons.access_time, "Time", controller.formatBookingTime(booking.timestamp?.bookedAt.toString())),
+                Container(width: 1, height: 40, color: Colors.white30),
+                _buildInfoChip(Icons.currency_rupee, "Fare", "₹${booking.fare!.baseFare}"),
               ],
             ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+          ),
+          const SizedBox(height: 20),
+          // Action Buttons
+          Obx(() {
+            debugPrint("UI Rebuilding with status => ${controller.checkStatuss.value}");
+
+            if (controller.checkStatuss.value == 'pending') {
+              return Row(
                 children: [
-                  _buildInfoChip(Icons.access_time, "Time", controller.formatBookingTime(booking.timestamp?.bookedAt.toString())),
-                  Container(width: 1, height: 40, color: Colors.white30),
-                  _buildInfoChip(Icons.currency_rupee, "Fare", "₹${booking.fare!.baseFare}"),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {},
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text(
+                        "Decline",
+                        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Constants.instance.apple,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          controller.bookPassenger(controller.passengerDetails.value.booking!.id.toString());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text(
+                          "Accept",
+                          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
-              ),
-            ),
-          ],
-        ),
+              );
+            } else if (controller.checkStatuss.value == 'accepted') {
+              return SizedBox(
+                width: double.infinity,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _showOTPDialog(context, controller);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.dialpad, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Enter OTP",
+                          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            } else if (controller.checkStatuss.value == 'in-progress') {
+              return SizedBox(
+                width: double.infinity,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Colors.green, Color(0xFF43A047)]),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      controller.completeService(controller.passengerDetails.value.booking!.id.toString());
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Complete Service",
+                          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              return Container();
+            }
+          }),
+        ],
       ),
     );
   }
@@ -331,100 +509,75 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildCheckInOutCard(BuildContext context, HomeController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 8))],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(children: [_buildHeader(context, controller), const SizedBox(height: 24), _buildPunchButton(context, controller)]),
+  void _showOTPDialog(BuildContext context, HomeController controller) {
+    Get.dialog(
+      barrierDismissible: false,
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text("Enter OTP", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: SizedBox(
+          height: 200,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextField(
+                controller: controller.verificationCodeController,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 8),
+                decoration: InputDecoration(
+                  hintText: "----",
+                  counterText: "",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Constants.instance.primary),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Constants.instance.primary, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Constants.instance.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text(
+                        "Cancel",
+                        style: GoogleFonts.poppins(color: Constants.instance.primary, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await controller.bookingOPTVerify(controller.passengerDetails.value.booking?.id);
+                        controller.verificationCodeController.text = "";
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Constants.instance.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text("Verify", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
-  }
-
-  Widget _buildHeader(BuildContext context, HomeController controller) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Constants.instance.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-          child: Icon(Icons.location_on, size: 28, color: Constants.instance.primary),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Current Location", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
-              const SizedBox(height: 4),
-              Text(
-                "Surat Station",
-                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800]),
-              ),
-              const SizedBox(height: 4),
-              Text("Monday, September 11:00 AM", style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600])),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPunchButton(BuildContext context, HomeController controller) {
-    return Obx(() {
-      return Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: controller.isCheckedIn.value
-                ? [Constants.instance.primary, Constants.instance.primary.withOpacity(0.8)]
-                : [Constants.instance.apple, Constants.instance.apple.withOpacity(0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: controller.isCheckedIn.value ? Constants.instance.apple.withOpacity(0.3) : Constants.instance.primary.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: () {
-            if (controller.isCheckedIn.value) {
-              controller.checkOut();
-            } else {
-              Get.toNamed(RouteName.checkIn, arguments: controller.isCheckedIn);
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            minimumSize: const Size(double.infinity, 55),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(controller.isCheckedIn.value ? Icons.logout_rounded : Icons.login_rounded, color: Colors.white),
-              const SizedBox(width: 8),
-              Text(
-                controller.isCheckedIn.value ? "Check Out" : "Check In",
-                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, letterSpacing: 0.5, fontSize: 16, color: Colors.white),
-              ),
-            ],
-          ),
-        ),
-      );
-    });
   }
 
   Widget _buildModernDrawer(HomeController controller) {
@@ -490,14 +643,6 @@ class HomeScreen extends StatelessWidget {
                       Get.to(() => UserProfileScreen());
                     },
                   ),
-                  // ListTile(
-                  //   leading: Icon(Icons.dashboard_outlined, color: Constants.instance.primary),
-                  //   title: Text('Dashboard', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                  //   trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                  //   onTap: () {
-                  //     Get.back();
-                  //   },
-                  // ),
                   ListTile(
                     leading: Icon(Icons.history, color: Constants.instance.primary),
                     title: Text('Booking History', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
@@ -507,14 +652,6 @@ class HomeScreen extends StatelessWidget {
                       Get.toNamed(RouteName.bookingHistory);
                     },
                   ),
-                  // ListTile(
-                  //   leading: Icon(Icons.support_agent_outlined, color: Constants.instance.primary),
-                  //   title: Text('Help & Support', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                  //   trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                  //   onTap: () {
-                  //     Get.back();
-                  //   },
-                  // ),
                   const Divider(height: 32),
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.red),
@@ -531,252 +668,5 @@ class HomeScreen extends StatelessWidget {
         ),
       );
     });
-  }
-
-  void _showBookingDetailsBottomSheet(
-    BuildContext context,
-    String name,
-    String mobile,
-    String bookingTime,
-    String payment,
-    String status,
-    HomeController controllerH,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          maxChildSize: 0.85,
-          minChildSize: 0.4,
-          builder: (_, controller) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, -4))],
-              ),
-              child: ListView(
-                controller: controller,
-                padding: const EdgeInsets.all(0),
-                children: [
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Container(
-                      width: 50,
-                      height: 5,
-                      decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Constants.instance.primary.withOpacity(0.1), Constants.instance.primary.withOpacity(0.05)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 2))],
-                                ),
-                                child: CircleAvatar(
-                                  radius: 32,
-                                  backgroundColor: Colors.blue[50],
-                                  child: Icon(Icons.person_rounded, size: 36, color: Constants.instance.primary),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      controllerH.passengerDetails.value.booking!.passengerId!.name.toString(),
-                                      style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey[800]),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Icon(Icons.phone, size: 14, color: Colors.grey[600]),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          controllerH.passengerDetails.value.booking!.passengerId!.mobileNo.toString(),
-                                          style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(16)),
-                          child: Column(
-                            children: [
-                              _buildDetailRow(
-                                Icons.access_time_rounded,
-                                "Booking Time",
-                                controllerH.formatBookingTime(controllerH.passengerDetails.value.booking!.timestamp?.bookedAt.toString()),
-                              ),
-                              const Divider(height: 32),
-                              _buildDetailRow(Icons.currency_rupee, "Payment", "₹${controllerH.passengerDetails.value.booking!.fare!.baseFare}"),
-                              const Divider(height: 32),
-                              _buildDetailRow(Icons.check_circle_outline, "Status", status, valueColor: _getStatusColorForDetail(status)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Obx(() {
-                          debugPrint("UI Rebuilding with status => ${controllerH.checkStatuss.value}");
-
-                          if (controllerH.checkStatuss.value.isEmpty) {
-                            return Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    style: OutlinedButton.styleFrom(
-                                      side: BorderSide(color: Constants.instance.primary),
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    ),
-                                    child: Text(
-                                      "Cancel",
-                                      style: GoogleFonts.poppins(color: Constants.instance.primary, fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(colors: [Constants.instance.apple, Constants.instance.apple.withOpacity(0.8)]),
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [BoxShadow(color: Constants.instance.apple.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
-                                    ),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        controllerH.bookPassenger(controllerH.passengerDetails.value.booking!.id.toString());
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.transparent,
-                                        shadowColor: Colors.transparent,
-                                        padding: const EdgeInsets.symmetric(vertical: 16),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                      child: Text(
-                                        "Accept Booking",
-                                        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          } else if (controllerH.checkStatuss.value == 'accepted' || controllerH.checkStatuss.value == 'in-progress') {
-                            return SizedBox(
-                              width: double.infinity,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(colors: [Colors.green, Color(0xFF43A047)]),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    controllerH.completeService(controllerH.passengerDetails.value.booking!.id.toString());
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.check_circle, color: Colors.white),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        "Complete Service",
-                                        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          } else {
-                            return Container();
-                          }
-                        }),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildDetailRow(IconData icon, String label, String value, {Color valueColor = Colors.black87}) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: Constants.instance.primary, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[600]),
-          ),
-        ),
-        Text(
-          value,
-          style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: valueColor),
-        ),
-      ],
-    );
-  }
-
-  Color _getStatusColorForDetail(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return Colors.green;
-      case 'accepted':
-        return Colors.blue;
-      case 'pending':
-        return Colors.orange;
-      case 'cancelled':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 }

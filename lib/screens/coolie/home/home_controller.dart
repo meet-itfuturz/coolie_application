@@ -26,14 +26,19 @@ class HomeController extends GetxController {
   var isLoading = false.obs;
 
   @override
-  void onInit() {
+  void onInit() async {
     super.onInit();
     final args = Get.arguments;
     if (args != null && args["bookingId"] != null) {
       bookingId.value = args["bookingId"];
     }
-    fetchUserProfile();
-    getPassengerData();
+    await initialize();
+  }
+
+  Future<void> initialize() async {
+    await fetchUserProfile();
+    await getPassengerData();
+    await checkStatus();
   }
 
   Future<void> fetchUserProfile() async {
@@ -84,7 +89,9 @@ class HomeController extends GetxController {
       final response = await _authRepo.getPassenger();
       debugPrint("MODEL ${response}");
       if (response != null) {
-        sessionId.value = response["sessionId"].toString().isEmpty ? "" : response["sessionId"].toString();
+        sessionId.value = response["sessionId"].toString().isEmpty
+            ? ""
+            : response["sessionId"].toString();
         passengerDetails.value = GetPassengerCoolieModel.fromJson(response);
         debugPrint("userProfile.value ${passengerDetails.value.toJson()}");
       } else {
@@ -102,11 +109,14 @@ class HomeController extends GetxController {
   Future<void> bookPassenger(String bookingId) async {
     try {
       isLoading.value = true;
-      final response = await _authRepo.bookPassenger(bookingId, sessionId.toString());
+      final response = await _authRepo.bookPassenger(
+        bookingId,
+        sessionId.toString(),
+      );
       debugPrint("Booking ${response}");
       if (response != null) {
-        Get.back();
-        otpDialog();
+        await initialize();
+        // otpDialog();
       }
     } catch (e) {
       AppToasting.showError('Failed to load bookPassenger: ${e.toString()}');
@@ -124,7 +134,10 @@ class HomeController extends GetxController {
     try {
       isLoading.value = true;
 
-      final response = await _authRepo.verifyBookingOTP(bookingId, verificationCodeController.text.trim());
+      final response = await _authRepo.verifyBookingOTP(
+        bookingId,
+        verificationCodeController.text.trim(),
+      );
 
       debugPrint("OTP Verify Response: $response");
 
@@ -133,8 +146,7 @@ class HomeController extends GetxController {
         await AppStorage.write('status', response['booking']['status']);
         debugPrint("statusDATA ${response['booking']['status']}");
         _authRepo.bookPassenger(bookingId, sessionId.toString());
-        await checkStatus();
-        await getPassengerData();
+        await initialize();
         Get.back();
         AppToasting.showSuccess("OTP Verified Successfully!");
       }
@@ -187,7 +199,10 @@ class HomeController extends GetxController {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Constants.instance.primary),
                 ),
-                child: Text("Verify", style: GoogleFonts.poppins(color: Constants.instance.white)),
+                child: Text(
+                  "Verify",
+                  style: GoogleFonts.poppins(color: Constants.instance.white),
+                ),
               ),
             ],
           ),
@@ -277,8 +292,15 @@ class HomeController extends GetxController {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.only(top: 10, bottom: 10, left: 15, right: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            padding: const EdgeInsets.only(
+              top: 10,
+              bottom: 10,
+              left: 15,
+              right: 15,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
           child: const Text('Logout'),
         ),

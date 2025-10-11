@@ -70,6 +70,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await notificationService.init();
     notificationService.showRemoteNotificationAndroid(message);
     log("Background message received: ${message.data}");
+    _onMessageOpenedApp(message);
   }
 }
 
@@ -78,6 +79,7 @@ void _onForegroundMessage(RemoteMessage message) async {
     lastHandledMessageId = message.messageId;
     notificationService.showRemoteNotificationAndroid(message);
     log("Foreground message received: ${message.data}");
+    _onMessageOpenedApp(message);
   }
 }
 
@@ -97,6 +99,7 @@ Future<void> terminatedNotification() async {
 void _handleNotificationClick(RemoteMessage message) async {
   log("Notification data: ${message.data}");
   String? bookingId = message.data["bookingId"];
+
 
   if (bookingId != null) {
     log("Handling notification with bookingId: $bookingId");

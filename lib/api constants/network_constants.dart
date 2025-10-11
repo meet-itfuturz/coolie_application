@@ -1,7 +1,7 @@
 class NetworkConstants {
   // local Urls
-  static const String baseUrl = 'https://hpf47sfz-2500.inc1.devtunnels.ms/';
-  static const String imageURL = 'https://hpf47sfz-2500.inc1.devtunnels.ms/';
+  static const String baseUrl = 'https://lsdd5gzv-2500.inc1.devtunnels.ms/';
+  static const String imageURL = 'https://lsdd5gzv-2500.inc1.devtunnels.ms/';
 
   //Production Urls
 
