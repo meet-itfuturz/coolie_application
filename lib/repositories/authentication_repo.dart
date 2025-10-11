@@ -171,15 +171,16 @@ class AuthenticationRepo {
     }
   }
 
-  Future<dynamic> getHistory() async {
+  Future<dynamic> getHistory({int page = 1, int limit = 10}) async {
     try {
-      final response = await apiManager.post(NetworkConstants.allcompletedBookings, data: {});
+      final response = await apiManager.post(NetworkConstants.allcompletedBookings, data: {"page": page, "limit": limit});
 
       if (response.status != 200) {
-        AppToasting.showWarning(response.data?.message ?? 'Failed to fetch profile');
+        AppToasting.showWarning(response.data?.message ?? 'Failed to fetch history');
         return null;
       }
-      debugPrint("model Data ${response.data}");
+
+      debugPrint("History Data: ${response.data}");
       return response.data;
     } catch (err) {
       AppToasting.showError('Error fetching History: ${err.toString()}');

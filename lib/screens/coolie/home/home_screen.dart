@@ -498,14 +498,15 @@ class HomeScreen extends StatelessWidget {
                   //     Get.back();
                   //   },
                   // ),
-                  // ListTile(
-                  //   leading: Icon(Icons.history, color: Constants.instance.primary),
-                  //   title: Text('Service History', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                  //   trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                  //   onTap: () {
-                  //     Get.back();
-                  //   },
-                  // ),
+                  ListTile(
+                    leading: Icon(Icons.history, color: Constants.instance.primary),
+                    title: Text('Booking History', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                    trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: () {
+                      Get.back();
+                      Get.toNamed(RouteName.bookingHistory);
+                    },
+                  ),
                   // ListTile(
                   //   leading: Icon(Icons.support_agent_outlined, color: Constants.instance.primary),
                   //   title: Text('Help & Support', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
@@ -691,7 +692,7 @@ class HomeScreen extends StatelessWidget {
                                 ),
                               ],
                             );
-                          } else if (controllerH.checkStatuss.value == 'accepted') {
+                          } else if (controllerH.checkStatuss.value == 'accepted' || controllerH.checkStatuss.value == 'in-progress') {
                             return SizedBox(
                               width: double.infinity,
                               child: Container(

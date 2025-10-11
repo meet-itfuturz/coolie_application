@@ -1,37 +1,105 @@
-import 'dart:convert';
 import 'package:coolie_application/repositories/authentication_repo.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../models/history_model.dart';
-import 'package:flutter/foundation.dart';
-
 
 class BookingHistoryController extends GetxController {
-  final AuthenticationRepo authenticationRepo =AuthenticationRepo();
+  final AuthenticationRepo authenticationRepo = AuthenticationRepo();
   final bookings = <GetAllBookings>[].obs;
   final isLoading = false.obs;
+  final hasMore = true.obs;
+  final page = 1.obs;
+  final limit = 10;
+  final scrollController = ScrollController();
 
   @override
   void onInit() {
     super.onInit();
     getHistory();
+    _setupScrollListener();
   }
 
-  Future<void>getHistory()async{
-    try{
-      final res= await authenticationRepo.getHistory();
-      debugPrint("res Data$res");
-      if(res !=null){
-        debugPrint("res Data null $res");
-        final List<dynamic> docs = res['bookings']['docs'];
-        bookings.assignAll(docs.map((e) => GetAllBookings.fromJson(e)).toList());
-        debugPrint("bookings== $bookings");
+  void _setupScrollListener() {
+    scrollController.addListener(() {
+      if (scrollController.position.pixels == scrollController.position.maxScrollExtent) {
+        if (hasMore.value && !isLoading.value) {
+          getHistory();
+        }
       }
-    }catch(e){
-      debugPrint("ERROR in HISTORY $e");
+    });
+  }
+
+  Future<void> getHistory() async {
+    if (isLoading.value) return;
+
+    try {
+      isLoading.value = true;
+
+      final res = await authenticationRepo.getHistory(page: page.value, limit: limit);
+
+      debugPrint("res Data: $res");
+
+      if (res != null) {
+        debugPrint("res Data not null: $res");
+
+        final Map<String, dynamic> bookingsData = res['bookings'];
+        final List<dynamic> docs = bookingsData['docs'];
+        final bool hasNextPage = bookingsData['hasNextPage'] ?? false;
+
+        final newBookings = docs.map((e) => GetAllBookings.fromJson(e)).toList();
+        bookings.addAll(newBookings);
+
+        hasMore.value = hasNextPage;
+        if (hasNextPage) {
+          page.value++;
+        }
+
+        debugPrint("Total bookings loaded: ${bookings.length}");
+        debugPrint("Has more pages: $hasNextPage");
+      }
+    } catch (e) {
+      debugPrint("ERROR in HISTORY: $e");
+    } finally {
+      isLoading.value = false;
+      update();
     }
   }
+
+  Future<void> refreshHistory() async {
+    bookings.clear();
+    page.value = 1;
+    hasMore.value = true;
+    await getHistory();
+  }
+
   String formatDate(String date) {
-    return DateFormat("dd MMM yyyy, hh:mm a").format(DateTime.parse(date));
+    try {
+      return DateFormat("dd MMM yyyy, hh:mm a").format(DateTime.parse(date));
+    } catch (e) {
+      return "N/A";
+    }
+  }
+
+  String calculateTotalSpent() {
+    if (bookings.isEmpty) return "0";
+
+    try {
+      double total = 0;
+      for (var booking in bookings) {
+        if (booking.fare?.baseFare != null) {
+          total += double.tryParse(booking.fare!.baseFare.toString()) ?? 0;
+        }
+      }
+      return total.toStringAsFixed(0);
+    } catch (e) {
+      return "0";
+    }
+  }
+
+  @override
+  void onClose() {
+    scrollController.dispose();
+    super.onClose();
   }
 }
