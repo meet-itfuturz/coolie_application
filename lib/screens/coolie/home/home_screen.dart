@@ -674,7 +674,6 @@ class HomeScreen extends StatelessWidget {
                                     ),
                                     child: ElevatedButton(
                                       onPressed: () {
-                                        Get.back();
                                         controllerH.bookPassenger(controllerH.passengerDetails.value.booking!.id.toString());
                                       },
                                       style: ElevatedButton.styleFrom(
@@ -692,7 +691,7 @@ class HomeScreen extends StatelessWidget {
                                 ),
                               ],
                             );
-                          } else if (controllerH.checkStatuss.value == 'in-progress') {
+                          } else if (controllerH.checkStatuss.value == 'accepted') {
                             return SizedBox(
                               width: double.infinity,
                               child: Container(
