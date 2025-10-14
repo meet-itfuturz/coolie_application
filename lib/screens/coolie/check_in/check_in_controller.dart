@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:io';
 import 'package:coolie_application/routes/route_name.dart';
 import 'package:dio/dio.dart' as dio;
@@ -115,7 +114,7 @@ class CheckInController extends GetxController {
 
       if (result != null) {
         coolieImage.value = null;
-        Get.toNamed(RouteName.home);
+        Get.back(result: true);
         update();
       }
     } catch (e) {

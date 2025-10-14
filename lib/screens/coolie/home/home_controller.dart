@@ -43,7 +43,7 @@ class HomeController extends GetxController {
 
   Future<void> fetchUserProfile() async {
     isLoading.value = true;
-    debugPrint("Fetching user profile...");
+    log("Fetching user profile...");
     try {
       final profile = await _authRepo.getUserProfile();
 
@@ -51,15 +51,15 @@ class HomeController extends GetxController {
         userProfile.value = profile;
         isCheckedIn.value = userProfile.value?.isLoggedIn == true;
         log("isCheckedIn.value: ${isCheckedIn.value}");
-        debugPrint("✅ Fetched User Name: ${profile.name}");
-        debugPrint("✅ User Check-in Status: ${profile.isLoggedIn}");
-        debugPrint("✅ Local isCheckedIn: ${isCheckedIn.value}");
+        log("✅ Fetched User Name: ${profile.name}");
+        log("✅ User Check-in Status: ${profile.isLoggedIn}");
+        log("✅ Local isCheckedIn: ${isCheckedIn.value}");
       } else {
-        debugPrint("❌ Profile is null - check API response structure");
+        log("❌ Profile is null - check API response structure");
         isCheckedIn.value = false;
       }
     } catch (e) {
-      debugPrint("Error fetching profile: $e");
+      log("Error fetching profile: $e");
       isCheckedIn.value = false;
     }
     isLoading.value = false;
@@ -87,19 +87,19 @@ class HomeController extends GetxController {
     try {
       isLoading.value = true;
       final response = await _authRepo.getPassenger();
-      debugPrint("MODEL ${response}");
+      log("MODEL ${response}");
       if (response != null) {
         sessionId.value = response["sessionId"].toString().isEmpty
             ? ""
             : response["sessionId"].toString();
         passengerDetails.value = GetPassengerCoolieModel.fromJson(response);
-        debugPrint("userProfile.value ${passengerDetails.value.toJson()}");
+        log("userProfile.value ${passengerDetails.value.toJson()}");
       } else {
         sessionId.value = "";
         passengerDetails.value = GetPassengerCoolieModel();
       }
     } catch (e) {
-      debugPrint("Failed to load Passenger: ${e.toString()}");
+      log("Failed to load Passenger: ${e.toString()}");
       // AppToasting.showError('Failed to load Passenger: ${e.toString()}');
     } finally {
       isLoading.value = false;
@@ -113,7 +113,7 @@ class HomeController extends GetxController {
         bookingId,
         sessionId.toString(),
       );
-      debugPrint("Booking ${response}");
+      log("Booking ${response}");
       if (response != null) {
         await initialize();
         // otpDialog();
@@ -139,13 +139,12 @@ class HomeController extends GetxController {
         verificationCodeController.text.trim(),
       );
 
-      debugPrint("OTP Verify Response: $response");
+      log("OTP Verify Response: $response");
 
       if (response != null) {
         // await getPassengerData();
         await AppStorage.write('status', response['booking']['status']);
-        debugPrint("statusDATA ${response['booking']['status']}");
-        _authRepo.bookPassenger(bookingId, sessionId.toString());
+        log("statusDATA ${response['booking']['status']}");
         await initialize();
         Get.back();
         AppToasting.showSuccess("OTP Verified Successfully!");
@@ -221,7 +220,7 @@ class HomeController extends GetxController {
       isLoading.value = true;
 
       final response = await _authRepo.completeService(bookingId);
-      debugPrint("OTP Verify Response: $response");
+      log("OTP Verify Response: $response");
       if (response != null) {
         AppToasting.showSuccess("Service Completed!");
         await getPassengerData();
@@ -241,7 +240,7 @@ class HomeController extends GetxController {
     try {
       isLoading.value = true;
       final response = await _authRepo.logOut();
-      debugPrint("Booking ${response}");
+      log("Booking ${response}");
       if (response != null) {
         Get.back();
         AppStorage.clearAll();
