@@ -106,12 +106,13 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> bookPassenger(String bookingId) async {
+  Future<void> bookPassenger(String bookingId, bool isAccept) async {
     try {
       isLoading.value = true;
       final response = await _authRepo.bookPassenger(
         bookingId,
         sessionId.toString(),
+        isAccept
       );
       log("Booking ${response}");
       if (response != null) {

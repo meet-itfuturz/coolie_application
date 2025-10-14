@@ -754,7 +754,12 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                               controller.bookPassenger(
+                                  controller.passengerDetails.value.booking!.id
+                                      .toString(), false
+                                );
+                            },
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
                                 color: Constants.instance.instagramRed,
@@ -800,7 +805,7 @@ class HomeScreen extends StatelessWidget {
                               onPressed: () {
                                 controller.bookPassenger(
                                   controller.passengerDetails.value.booking!.id
-                                      .toString(),
+                                      .toString(), true
                                 );
                               },
                               style: ElevatedButton.styleFrom(
