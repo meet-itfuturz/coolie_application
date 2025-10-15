@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:coolie_application/routes/route_name.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -112,10 +111,18 @@ class CheckInController extends GetxController {
       var result = await authenticationRepo.faceDetection(formData);
       debugPrint("API Response: $result");
 
-      if (result != null) {
+      if (result != null && result['success'] == true) {
         coolieImage.value = null;
+        // Navigate back first, then show success message
         Get.back(result: true);
         update();
+        
+        // Show success message after navigation is complete
+        Future.delayed(const Duration(milliseconds: 500), () {
+          AppToasting.showSuccess(result['message'] ?? "Face login successful!");
+        });
+      } else if (result != null && result['success'] == false) {
+        AppToasting.showError(result['message'] ?? "Face detection failed");
       }
     } catch (e) {
       debugPrint("Error in validateFace: $e");

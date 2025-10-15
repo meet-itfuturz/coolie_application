@@ -13,7 +13,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'services/app_toasting.dart';
 import 'utils/app_config.dart';
 import 'utils/theme_constants.dart';
 
@@ -148,18 +147,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      bottom: true,
-      child: GetMaterialApp(
-        scaffoldMessengerKey: AppToasting.scaffoldMessengerKey,
-        title: AppConfig.appName,
-        initialRoute: RouteName.splash,
-        getPages: RoutePages.pages,
-        defaultTransition: Transition.rightToLeftWithFade,
-        debugShowCheckedModeBanner: false,
-        theme: defaultTheme,
-      ),
+    return GetMaterialApp(
+      title: AppConfig.appName,
+      initialRoute: RouteName.splash,
+      getPages: RoutePages.pages,
+      defaultTransition: Transition.rightToLeftWithFade,
+      debugShowCheckedModeBanner: false,
+      theme: defaultTheme,
+      enableLog: true,
+      logWriterCallback: (text, {bool isError = false}) {
+        if (isError) {
+          log("GetX Error: $text");
+        } else {
+          log("GetX Log: $text");
+        }
+      },
+      builder: (context, child) {
+        return SafeArea(
+          top: false,
+          bottom: true,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

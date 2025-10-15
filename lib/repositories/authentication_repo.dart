@@ -46,19 +46,32 @@ class AuthenticationRepo {
       final result = await apiManager.post(NetworkConstants.faceDetect, data: data);
       if (result.status == 200) {
         if (result.data != null) {
-          AppToasting.showWarning(result.message);
-          return result.data;
+          // Return both data and message for the controller to handle
+          return {
+            'data': result.data,
+            'message': result.message,
+            'success': true
+          };
         } else {
-          AppToasting.showWarning(result.message);
-          return null;
+          return {
+            'data': null,
+            'message': result.message,
+            'success': false
+          };
         }
       } else {
-        AppToasting.showWarning(result.message);
-        return null;
+        return {
+          'data': null,
+          'message': result.message,
+          'success': false
+        };
       }
     } catch (err) {
-      AppToasting.showWarning(err.toString());
-      return null;
+      return {
+        'data': null,
+        'message': err.toString(),
+        'success': false
+      };
     }
   }
 
@@ -83,14 +96,23 @@ class AuthenticationRepo {
       final response = await apiManager.post(NetworkConstants.jobOff, data: {});
 
       if (response.status != 200) {
-        AppToasting.showWarning(response.message);
-        return null;
+        return {
+          'success': false,
+          'message': response.message,
+          'data': null
+        };
       }
-      AppToasting.showSuccess(response.message);
-      return response.data;
+      return {
+        'success': true,
+        'message': response.message,
+        'data': response.data
+      };
     } catch (err) {
-      AppToasting.showError('Error fetching GetPassenger: ${err.toString()}');
-      return null;
+      return {
+        'success': false,
+        'message': 'Error fetching GetPassenger: ${err.toString()}',
+        'data': null
+      };
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:coolie_application/models/coolie_user_profile.dart';
 import 'package:coolie_application/routes/route_name.dart';
@@ -25,6 +26,13 @@ class HomeController extends GetxController {
   var userProfile = Rxn<CoolieUserProfile>();
   var isLoading = false.obs;
 
+  // Timer variables
+  final elapsedTime = '00:00'.obs;
+  final countdownTime = '00:30'.obs;
+  Timer? _timer;
+  DateTime? bookingStartTime;
+  final timerDurationInSeconds = 30.obs;
+
   @override
   void onInit() async {
     super.onInit();
@@ -35,10 +43,96 @@ class HomeController extends GetxController {
     await initialize();
   }
 
+  @override
+  void onClose() {
+    _timer?.cancel();
+    verificationCodeController.dispose();
+    super.onClose();
+  }
+
   Future<void> initialize() async {
     await fetchUserProfile();
     await getPassengerData();
     await checkStatus();
+  }
+
+  void startTimer() {
+    bookingStartTime = DateTime.now();
+    _timer?.cancel();
+    
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (bookingStartTime != null) {
+        final now = DateTime.now();
+        final difference = now.difference(bookingStartTime!);
+        
+        final minutes = difference.inMinutes;
+        final seconds = difference.inSeconds % 60;
+        
+        elapsedTime.value = 
+            '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+      }
+    });
+  }
+
+  void stopTimer() {
+    _timer?.cancel();
+    bookingStartTime = null;
+    elapsedTime.value = '00:00';
+    countdownTime.value = '00:30';
+  }
+
+  void startCountdownTimer() {
+    _timer?.cancel();
+    
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final booking = passengerDetails.value.booking;
+      if (booking?.timestamp?.bookedAt != null && checkStatuss.value == 'pending') {
+        try {
+          final bookedAt = DateTime.parse(booking!.timestamp!.bookedAt.toString());
+          final now = DateTime.now();
+          final elapsed = now.difference(bookedAt).inSeconds;
+          final remaining = 30 - elapsed;
+          
+          if (remaining > 0) {
+            final minutes = (remaining ~/ 60).toString().padLeft(2, '0');
+            final seconds = (remaining % 60).toString().padLeft(2, '0');
+            countdownTime.value = '$minutes:$seconds';
+          } else {
+            // Auto-decline when timer reaches zero
+            countdownTime.value = '00:00';
+            timer.cancel();
+            _autoDeclineRequest();
+          }
+        } catch (e) {
+          log("Error parsing booking time: $e");
+          timer.cancel();
+        }
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  void _autoDeclineRequest() {
+    final booking = passengerDetails.value.booking;
+    if (booking != null && checkStatuss.value == 'pending') {
+      log("Auto-declining request due to timeout");
+      bookPassenger(booking.id.toString(), false);
+    }
+  }
+
+  String getTimerDisplay() {
+    if (bookingStartTime == null) {
+      return '00:00';
+    }
+    
+    final now = DateTime.now();
+    final difference = now.difference(bookingStartTime!);
+    
+    final minutes = difference.inMinutes;
+    final seconds = difference.inSeconds % 60;
+    
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   Future<void> fetchUserProfile() async {
@@ -70,11 +164,18 @@ class HomeController extends GetxController {
     try {
       final response = await _authRepo.getOff();
 
-      if (response != null) {
+      if (response != null && response['success'] == true) {
         isCheckedIn.value = false;
+        stopTimer();
         await fetchUserProfile();
         await getPassengerData();
-        AppToasting.showSuccess("Checked out successfully!");
+        
+        // Show success message after all operations are complete
+        Future.delayed(const Duration(milliseconds: 300), () {
+          AppToasting.showSuccess(response['message'] ?? "Checked out successfully!");
+        });
+      } else if (response != null && response['success'] == false) {
+        AppToasting.showError(response['message'] ?? "Failed to check out");
       }
     } catch (e) {
       AppToasting.showError('Failed to check out: ${e.toString()}');
@@ -94,13 +195,27 @@ class HomeController extends GetxController {
             : response["sessionId"].toString();
         passengerDetails.value = GetPassengerCoolieModel.fromJson(response);
         log("userProfile.value ${passengerDetails.value.toJson()}");
+        
+        // Start appropriate timer based on status
+        if (passengerDetails.value.booking != null) {
+          if (checkStatuss.value == 'pending') {
+            startCountdownTimer();
+          } else if (checkStatuss.value == 'accepted' || 
+              checkStatuss.value.toLowerCase() == 'in-progress') {
+            if (bookingStartTime == null) {
+              startTimer();
+            }
+          } else {
+            stopTimer();
+          }
+        }
       } else {
         sessionId.value = "";
         passengerDetails.value = GetPassengerCoolieModel();
+        stopTimer();
       }
     } catch (e) {
       log("Failed to load Passenger: ${e.toString()}");
-      // AppToasting.showError('Failed to load Passenger: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
@@ -116,8 +231,10 @@ class HomeController extends GetxController {
       );
       log("Booking ${response}");
       if (response != null) {
+        if (isAccept) {
+          startTimer();
+        }
         await initialize();
-        // otpDialog();
       }
     } catch (e) {
       AppToasting.showError('Failed to load bookPassenger: ${e.toString()}');
@@ -143,7 +260,6 @@ class HomeController extends GetxController {
       log("OTP Verify Response: $response");
 
       if (response != null) {
-        // await getPassengerData();
         await AppStorage.write('status', response['booking']['status']);
         log("statusDATA ${response['booking']['status']}");
         await initialize();
@@ -224,6 +340,7 @@ class HomeController extends GetxController {
       log("OTP Verify Response: $response");
       if (response != null) {
         AppToasting.showSuccess("Service Completed!");
+        stopTimer();
         await getPassengerData();
         checkStatuss.value = '';
         this.bookingId.value = '';
@@ -244,6 +361,7 @@ class HomeController extends GetxController {
       log("Booking ${response}");
       if (response != null) {
         Get.back();
+        stopTimer();
         AppStorage.clearAll();
         Get.offAllNamed(RouteName.signIn);
       }
@@ -264,8 +382,21 @@ class HomeController extends GetxController {
         log("Booking Status Response not null: $response");
         checkStatuss.value = response["currentStatus"];
         log("Current Status => ${checkStatuss.value}");
+        
+        // Start appropriate timer based on status
+        if (checkStatuss.value == 'pending') {
+          startCountdownTimer();
+        } else if (checkStatuss.value == 'accepted' || 
+            checkStatuss.value.toLowerCase() == 'in-progress') {
+          if (bookingStartTime == null) {
+            startTimer();
+          }
+        } else {
+          stopTimer();
+        }
       } else {
         checkStatuss.value = "";
+        stopTimer();
       }
     } catch (e) {
       AppToasting.showError('Failed to load checkOut: ${e.toString()}');
@@ -286,6 +417,7 @@ class HomeController extends GetxController {
         ElevatedButton(
           onPressed: () async {
             Get.back();
+            stopTimer();
             await AppStorage.clearAll();
             Get.offAllNamed(RouteName.signIn);
           },
