@@ -92,20 +92,7 @@ class HomeScreen extends StatelessWidget {
                 tooltip: 'Refresh',
               ),
             ),
-            Container(
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: IconButton(
-                onPressed: () {
-                  AppToasting.testSnackbar();
-                },
-                icon: const Icon(Icons.bug_report, color: Colors.white),
-                tooltip: 'Test Snackbar',
-              ),
-            ),
+            
           ],
         ),
         drawer: _buildModernDrawer(controller),

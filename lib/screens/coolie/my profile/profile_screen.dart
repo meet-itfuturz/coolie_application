@@ -1,5 +1,7 @@
+import 'package:coolie_application/services/app_toasting.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../api constants/network_constants.dart';
 import '../../../utils/app_constants.dart';
 import '../home/home_controller.dart';
@@ -212,7 +214,7 @@ Widget _buildLogoutButton(BuildContext context, HomeController controller) {
     child: InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () {
-        _showLogoutConfirmation(context, controller);
+        deleteAccount(context);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -242,49 +244,38 @@ Widget _buildLogoutButton(BuildContext context, HomeController controller) {
   );
 }
 
-void _showLogoutConfirmation(BuildContext context, HomeController controller) {
-  Get.dialog(
-    AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(
-        'Confirm Logout',
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-      ),
-      content: Text(
-        'Are you sure you want to log out of your account?',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Get.back(),
-          child: Text(
-            'Cancel',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        TextButton(
-          onPressed: () {
-            Get.back();
-            // controller.deleteAccount();
-          },
-          child: Text(
-            'Delete',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.error,
-            ),
-          ),
-        ),
-      ],
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-    ),
-  );
-}
+Future<void> deleteAccount(BuildContext context) async {
+      const url = 'https://docs.google.com/forms/d/e/1FAIpQLSe_6UsyVHh5hX02k2N-uaAz26Kl9iTim2fTskkyppcthKmlDQ/viewform?pli=1';
+      // Show confirmation dialog
+      bool? confirmDelete = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Delete Account'),
+            content: const Text('Are you sure you want to delete your account? This action is permanent and cannot be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false), // Cancel
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true), // Confirm
+                child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          );
+        },
+      );
+      // Proceed with deletion only if user confirms
+      if (confirmDelete == true) {
+        try {
+          if (await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
+            // Success
+          } else {
+            AppToasting.showWarning('Could not launch URL');
+          }
+        } catch (e) {
+          AppToasting.showWarning('Error: $e');
+        }
+      }
+    }
