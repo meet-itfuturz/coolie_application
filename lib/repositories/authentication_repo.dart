@@ -36,7 +36,7 @@ class AuthenticationRepo {
       }
     } catch (e, stack) {
       debugPrint("Get User Profile API Error===: $e\n$stack");
-      AppToasting.showError("Failed to fetch user profile");
+      errorToast("Failed to fetch user profile");
       return null;
     }
   }
@@ -45,20 +45,55 @@ class AuthenticationRepo {
     try {
       final result = await apiManager.post(NetworkConstants.faceDetect, data: data);
       if (result.status == 200) {
-        if (result.data != null) {
-          // Return both data and message for the controller to handle
-          return {
-            'data': result.data,
-            'message': result.message,
-            'success': true
-          };
-        } else {
-          return {
-            'data': null,
-            'message': result.message,
-            'success': false
-          };
+        // Check if the message indicates success or failure
+        final message = result.message.toString().toLowerCase();
+        
+        // If message contains failure indicators, it's a failure
+        final hasFailureKeywords = message.contains('failed') || 
+                                  message.contains('error') || 
+                                  message.contains('below threshold') ||
+                                  message.contains('not match') ||
+                                  message.contains('unable');
+        
+        // Also check similarity score if available in data
+        bool successByScore = true;
+        if (result.data != null && result.data is Map<String, dynamic>) {
+          final dataMap = result.data as Map<String, dynamic>;
+          if (dataMap.containsKey('similarityScore') && dataMap.containsKey('threshold')) {
+            // Safely parse similarityScore (can be String or num)
+            double similarityScore = 0.0;
+            final similarityValue = dataMap['similarityScore'];
+            if (similarityValue is num) {
+              similarityScore = similarityValue.toDouble();
+            } else if (similarityValue is String) {
+              similarityScore = double.tryParse(similarityValue) ?? 0.0;
+            }
+            
+            // Safely parse threshold (can be String or num)
+            double threshold = 0.0;
+            final thresholdValue = dataMap['threshold'];
+            if (thresholdValue is num) {
+              threshold = thresholdValue.toDouble();
+            } else if (thresholdValue is String) {
+              threshold = double.tryParse(thresholdValue) ?? 0.0;
+            }
+            
+            successByScore = similarityScore >= threshold;
+            debugPrint("Face Detection - Similarity: $similarityScore, Threshold: $threshold, Pass: $successByScore");
+          }
         }
+        
+        // Success only if message doesn't indicate failure AND score passes (if available)
+        // If message says "failed" or "below threshold", trust the message over the score
+        final finalSuccess = !hasFailureKeywords && successByScore;
+        
+        debugPrint("Face Detection Result - Message: ${result.message}, Success: $finalSuccess");
+        
+        return {
+          'data': result.data,
+          'message': result.message,
+          'success': finalSuccess
+        };
       } else {
         return {
           'data': null,
@@ -80,13 +115,13 @@ class AuthenticationRepo {
       final response = await apiManager.post(NetworkConstants.getNextBooking, data: {});
 
       if (response.status != 200) {
-        AppToasting.showWarning(response.data?.message ?? 'Failed to fetch profile');
+        warningToast(response.data?.message ?? 'Failed to fetch profile');
         return null;
       }
       debugPrint("model Data ${response.data}");
       return response.data;
     } catch (err) {
-      AppToasting.showError('Error fetching GetPassenger: ${err.toString()}');
+      errorToast('Error fetching GetPassenger: ${err.toString()}');
       return null;
     }
   }
@@ -121,13 +156,13 @@ class AuthenticationRepo {
       final response = await apiManager.post(NetworkConstants.bookingAction, data: {"bookingId": bookingId, "sessionId": sessionId, "action": isAccept ? "accept" : "reject"});
 
       if (response.status != 200) {
-        AppToasting.showWarning(response.data?.message ?? 'Failed to fetch bookings');
+        warningToast(response.data?.message ?? 'Failed to fetch bookings');
         return null;
       }
       debugPrint("model Data ${response.data}");
       return response.data;
     } catch (err) {
-      AppToasting.showError('Error fetching BookPassenger: ${err.toString()}');
+      errorToast('Error fetching BookPassenger: ${err.toString()}');
       return null;
     }
   }
@@ -137,13 +172,13 @@ class AuthenticationRepo {
       final response = await apiManager.post(NetworkConstants.startService, data: {"bookingId": bookingId, "otp": otp});
 
       if (response.status != 200) {
-        AppToasting.showWarning(response.data?.message ?? 'Failed to fetch OTP');
+        warningToast(response.data?.message ?? 'Failed to fetch OTP');
         return null;
       }
       debugPrint("model Data ${response.data}");
       return response.data;
     } catch (err) {
-      AppToasting.showError('Error fetching OTP: ${err.toString()}');
+      errorToast('Error fetching OTP: ${err.toString()}');
       return null;
     }
   }
@@ -152,13 +187,13 @@ class AuthenticationRepo {
     try {
       final response = await apiManager.post(NetworkConstants.completeService, data: {"bookingId": bookingId});
       if (response.status != 200) {
-        AppToasting.showWarning(response.data?.message ?? 'Failed to fetch OTP');
+        warningToast(response.data?.message ?? 'Failed to fetch OTP');
         return null;
       }
       debugPrint("model Data ${response.data}");
       return response.data;
     } catch (err) {
-      AppToasting.showError('Error fetching Complete: ${err.toString()}');
+      errorToast('Error fetching Complete: ${err.toString()}');
       return null;
     }
   }
@@ -167,13 +202,13 @@ class AuthenticationRepo {
     try {
       final response = await apiManager.post(NetworkConstants.logout, data: {});
       if (response.status != 200) {
-        AppToasting.showWarning(response.data?.message ?? 'Failed to fetch OTP');
+        warningToast(response.data?.message ?? 'Failed to fetch OTP');
         return null;
       }
       debugPrint("model Data ${response.data}");
       return response.data;
     } catch (err) {
-      AppToasting.showError('Error fetching LogOut: ${err.toString()}');
+      errorToast('Error fetching LogOut: ${err.toString()}');
       return null;
     }
   }
@@ -182,13 +217,13 @@ class AuthenticationRepo {
     try {
       final response = await apiManager.post(NetworkConstants.currentBookingStatus, data: {});
       if (response.status != 200) {
-        AppToasting.showWarning(response.data?.message ?? 'Failed to fetch OTP');
+        warningToast(response.data?.message ?? 'Failed to fetch OTP');
         return null;
       }
       debugPrint("model Data ${response.data}");
       return response.data;
     } catch (err) {
-      AppToasting.showError('Error fetching CheckStatus: ${err.toString()}');
+      errorToast('Error fetching CheckStatus: ${err.toString()}');
       return null;
     }
   }
@@ -198,14 +233,14 @@ class AuthenticationRepo {
       final response = await apiManager.post(NetworkConstants.allcompletedBookings, data: {"page": page, "limit": limit});
 
       if (response.status != 200) {
-        AppToasting.showWarning(response.data?.message ?? 'Failed to fetch history');
+        warningToast(response.data?.message ?? 'Failed to fetch history');
         return null;
       }
 
       debugPrint("History Data: ${response.data}");
       return response.data;
     } catch (err) {
-      AppToasting.showError('Error fetching History: ${err.toString()}');
+      errorToast('Error fetching History: ${err.toString()}');
       return null;
     }
   }
@@ -215,13 +250,13 @@ class AuthenticationRepo {
       final response = await apiManager.post(NetworkConstants.registerCollie, data: data);
 
       if (response.status != 200) {
-        AppToasting.showWarning(response.data?.message ?? 'Failed to fetch profile');
+        warningToast(response.data?.message ?? 'Failed to fetch profile');
         return null;
       }
       debugPrint("model Data ${response.data}");
       return response.data;
     } catch (err) {
-      AppToasting.showError('Error fetching History: ${err.toString()}');
+      errorToast('Error fetching History: ${err.toString()}');
       return null;
     }
   }

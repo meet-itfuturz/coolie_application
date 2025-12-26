@@ -172,13 +172,13 @@ class HomeController extends GetxController {
         
         // Show success message after all operations are complete
         Future.delayed(const Duration(milliseconds: 300), () {
-          AppToasting.showSuccess(response['message'] ?? "Checked out successfully!");
+          successToast(response['message'] ?? "Checked out successfully!");
         });
       } else if (response != null && response['success'] == false) {
-        AppToasting.showError(response['message'] ?? "Failed to check out");
+        errorToast(response['message'] ?? "Failed to check out");
       }
     } catch (e) {
-      AppToasting.showError('Failed to check out: ${e.toString()}');
+      errorToast('Failed to check out: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
@@ -237,7 +237,7 @@ class HomeController extends GetxController {
         await initialize();
       }
     } catch (e) {
-      AppToasting.showError('Failed to load bookPassenger: ${e.toString()}');
+      errorToast('Failed to load bookPassenger: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
@@ -245,7 +245,7 @@ class HomeController extends GetxController {
 
   Future<void> bookingOPTVerify(String? bookingId) async {
     if (bookingId == null) {
-      AppToasting.showError("Booking ID not found!");
+      errorToast("Booking ID not found!");
       return;
     }
 
@@ -264,10 +264,10 @@ class HomeController extends GetxController {
         log("statusDATA ${response['booking']['status']}");
         await initialize();
         Get.back();
-        AppToasting.showSuccess("OTP Verified Successfully!");
+        successToast("OTP Verified Successfully!");
       }
     } catch (e) {
-      AppToasting.showError('Failed to verify OTP: ${e.toString()}');
+      errorToast('Failed to verify OTP: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
@@ -329,7 +329,7 @@ class HomeController extends GetxController {
 
   Future<void> completeService(String? bookingId) async {
     if (bookingId == null) {
-      AppToasting.showError("Booking ID not found!");
+      errorToast("Booking ID not found!");
       return;
     }
 
@@ -339,7 +339,7 @@ class HomeController extends GetxController {
       final response = await _authRepo.completeService(bookingId);
       log("OTP Verify Response: $response");
       if (response != null) {
-        AppToasting.showSuccess("Service Completed!");
+        successToast("Service Completed!");
         stopTimer();
         await getPassengerData();
         checkStatuss.value = '';
@@ -348,7 +348,7 @@ class HomeController extends GetxController {
         Get.back();
       }
     } catch (e) {
-      AppToasting.showError('Failed to verify OTP: ${e.toString()}');
+      errorToast('Failed to verify OTP: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
@@ -366,7 +366,7 @@ class HomeController extends GetxController {
         Get.offAllNamed(RouteName.signIn);
       }
     } catch (e) {
-      AppToasting.showError('Failed to load LogOut: ${e.toString()}');
+      errorToast('Failed to load LogOut: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
@@ -399,7 +399,7 @@ class HomeController extends GetxController {
         stopTimer();
       }
     } catch (e) {
-      AppToasting.showError('Failed to load checkOut: ${e.toString()}');
+      errorToast('Failed to load checkOut: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }

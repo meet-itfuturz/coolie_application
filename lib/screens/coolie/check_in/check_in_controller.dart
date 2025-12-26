@@ -26,7 +26,7 @@ class CheckInController extends GetxController {
     // if (args != null) {
     //   isCheckedIn.value = args;
     // } else {
-    //   Get.snackbar('Error', 'Checked in is not coming');
+    //   errorToast('Error', 'Checked in is not coming');
     //   Get.back();
     // }
     _loadMobileNumber();
@@ -71,7 +71,7 @@ class CheckInController extends GetxController {
         update();
       }
     } catch (e) {
-      AppToasting.showError('Failed to pick image: $e');
+      errorToast('Failed to pick image: $e');
     }
   }
 
@@ -85,7 +85,7 @@ class CheckInController extends GetxController {
     }
 
     if (coolieImage.value == null) {
-      AppToasting.showError('Please capture your photo first');
+      errorToast('Please capture your photo first');
       return;
     }
 
@@ -119,14 +119,28 @@ class CheckInController extends GetxController {
         
         // Show success message after navigation is complete
         Future.delayed(const Duration(milliseconds: 500), () {
-          AppToasting.showSuccess(result['message'] ?? "Face login successful!");
+          successToast(result['message'] ?? "Face login successful!");
         });
       } else if (result != null && result['success'] == false) {
-        AppToasting.showError(result['message'] ?? "Face detection failed");
+        // Show error message - ensure it's called on UI thread
+        final errorMessage = result['message'] ?? "Face detection failed";
+        
+        // Use WidgetsBinding to ensure we're on UI thread
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          errorToast(errorMessage);
+        });
+        
+        // Also log for debugging
+        debugPrint("Face detection failed: $errorMessage");
+      } else {
+        // Handle null result
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          errorToast("Face detection failed: No response from server");
+        });
       }
     } catch (e) {
       debugPrint("Error in validateFace: $e");
-      AppToasting.showError('Failed to process request: $e');
+      errorToast('Failed to process request: $e');
     } finally {
       isLoading(false);
       update();

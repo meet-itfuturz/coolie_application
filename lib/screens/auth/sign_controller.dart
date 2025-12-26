@@ -1,3 +1,4 @@
+import '../../services/app_toasting.dart';
 import '/services/notification_service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
@@ -51,10 +52,10 @@ class SignController extends GetxController {
         debugPrint("SignIn Response: ${response}");
         Get.toNamed(RouteName.otpVerification, arguments: {"mobileNo": mobileController.text});
       } else {
-        Get.snackbar('Error', 'Failed to send OTP. Please try again.');
+        errorToast('Failed to send OTP. Please try again.');
       }
     } catch (e) {
-      Get.snackbar('Error', 'An error occurred: $e');
+      errorToast('An error occurred: $e');
       debugPrint("SignIn Error: $e");
     } finally {
       isLoading.value = false;

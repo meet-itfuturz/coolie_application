@@ -808,10 +808,10 @@ class HomeScreen extends StatelessWidget {
                       if (await canLaunchUrl(phoneUri)) {
                         await launchUrl(phoneUri);
                       } else {
-                        AppToasting.showError('Could not launch phone call');
+                        errorToast('Could not launch phone call');
                       }
                     } else {
-                      AppToasting.showError('Phone number not available');
+                      errorToast('Phone number not available');
                     }
                   },
                   style: ElevatedButton.styleFrom(

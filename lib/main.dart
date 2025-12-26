@@ -148,12 +148,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: AppConfig.appName,
-      initialRoute: RouteName.splash,
-      getPages: RoutePages.pages,
-      defaultTransition: Transition.rightToLeftWithFade,
-      debugShowCheckedModeBanner: false,
-      theme: defaultTheme,
+        title: AppConfig.appName,
+        initialRoute: RouteName.splash,
+        getPages: RoutePages.pages,
+        defaultTransition: Transition.rightToLeftWithFade,
+        debugShowCheckedModeBanner: false,
+        theme: defaultTheme,
       enableLog: true,
       logWriterCallback: (text, {bool isError = false}) {
         if (isError) {

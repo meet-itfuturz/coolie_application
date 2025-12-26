@@ -20,12 +20,12 @@ class AuthService extends GetxService {
       if (result.data is Map<String, dynamic>) {
         return SignInResponseModel.fromJson(result.data);
       } else {
-        AppToasting.showError(result.message);
+        errorToast(result.message);
         return null;
       }
     } catch (e, stack) {
       debugPrint("SignIn API Error: $e\n$stack");
-      AppToasting.showError("Failed to send OTP: $e");
+      errorToast("Failed to send OTP: $e");
       return null;
     }
   }
@@ -38,7 +38,7 @@ class AuthService extends GetxService {
       debugPrint("OTP Verify Response: $responseData");
 
       if (responseData['user'] == null || responseData['token'] == null) {
-        AppToasting.showError(result.message);
+        errorToast(result.message);
         return null;
       }
 
@@ -46,7 +46,7 @@ class AuthService extends GetxService {
       return userModel;
     } catch (e) {
       debugPrint("ERROR in verifyOtp: $e");
-      AppToasting.showError("Network error occurred");
+      errorToast("Network error occurred");
       return null;
     }
   }
@@ -56,19 +56,19 @@ class AuthService extends GetxService {
       final response = await apiManager.post(NetworkConstants.otpVerification, data: request);
 
       if (response.data == null) {
-        AppToasting.showError(response.message);
+        errorToast(response.message);
         return;
       }
 
       if (response.status != 200) {
-        AppToasting.showWarning(response.message);
+        warningToast(response.message);
         return;
       }
 
       final verifyData = response.data is String ? json.decode(response.data) : response.data;
 
       if (verifyData["token"] == null || verifyData["user"] == null) {
-        AppToasting.showError("Authentication token or user data not received");
+        errorToast("Authentication token or user data not received");
         return;
       }
 
@@ -78,7 +78,7 @@ class AuthService extends GetxService {
       Get.toNamed(RouteName.home);
     } catch (err) {
       log("Resend OTP error: $err");
-      AppToasting.showError("Failed to resend OTP: $err");
+      errorToast("Failed to resend OTP: $err");
     }
   }
 }

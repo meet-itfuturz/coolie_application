@@ -30,7 +30,7 @@ class OtpVerifyController extends GetxController {
     if (args != null && args["mobileNo"] != null) {
       mobile.value = args["mobileNo"];
     } else {
-      Get.snackbar('Error', 'Mobile number not provided');
+      errorToast('Mobile number not provided');
       Get.back();
     }
     _startTimer();
@@ -70,12 +70,12 @@ class OtpVerifyController extends GetxController {
 
   Future<void> verifyOtp() async {
     if (verificationCodeController.text.trim().isEmpty) {
-      AppToasting.showWarning("Please enter OTP");
+      warningToast("Please enter OTP");
       return;
     }
 
     if (verificationCodeController.text.trim().length != 4) {
-      AppToasting.showWarning("Please enter a valid 4-digit OTP");
+      warningToast("Please enter a valid 4-digit OTP");
       return;
     }
 
@@ -91,13 +91,13 @@ class OtpVerifyController extends GetxController {
         await AppStorage.write('token', userModel.token);
         await AppStorage.write('userMobile', userMobile);
         await AppStorage.write('user', json.encode(userModel.toJson()));
-        AppToasting.showSuccess("OTP Verified Successfully");
+        successToast("OTP Verified Successfully");
         Get.offAllNamed(RouteName.home);
       } else {
-        AppToasting.showError("Invalid OTP. Please try again.");
+        errorToast("Invalid OTP. Please try again.");
       }
     } catch (e) {
-      AppToasting.showError("An error occurred: $e");
+      errorToast("An error occurred: $e");
       debugPrint("Verify OTP Error: $e");
     } finally {
       isLoading.value = false;
@@ -109,10 +109,10 @@ class OtpVerifyController extends GetxController {
     try {
       final request = {"mobileNo": mobile.value};
       await authService.reSendOtp(request);
-      AppToasting.showSuccess("OTP resent successfully");
+      successToast("OTP resent successfully");
       _startTimer();
     } catch (e) {
-      AppToasting.showError("Failed to resend OTP: $e");
+      errorToast("Failed to resend OTP: $e");
       debugPrint("Resend OTP Error: $e");
     } finally {
       isLoading.value = false;

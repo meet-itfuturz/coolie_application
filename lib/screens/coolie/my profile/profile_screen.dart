@@ -272,10 +272,10 @@ Future<void> deleteAccount(BuildContext context) async {
           if (await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
             // Success
           } else {
-            AppToasting.showWarning('Could not launch URL');
+            warningToast('Could not launch URL');
           }
         } catch (e) {
-          AppToasting.showWarning('Error: $e');
+          warningToast('Error: $e');
         }
       }
     }

@@ -99,12 +99,12 @@ class ApiManager {
     if (error.response != null && error.response!.data != null) {
       // Server responded with error but in our standard format
       var responseModel = ResponseModel.fromJson(error.response!.data);
-      AppToasting.showError(responseModel.message);
+     errorToast(responseModel.message);
       return responseModel;
     } else {
       // Network or other unrecoverable error
       String message = _getErrorMessage(error);
-      AppToasting.showError(message);
+      errorToast(message);
       return ResponseModel(message: message, data: null, status: error.response?.statusCode ?? 500);
     }
   }
