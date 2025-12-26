@@ -16,20 +16,18 @@ class CheckInController extends GetxController {
   TextEditingController mobileNumberController = TextEditingController();
   final isConfirmEnabled = false.obs;
   final isEnable = false.obs;
+  GlobalKey<FormState>? formKey;
+  final isCameraOpening = false.obs;
   // final isCheckedIn = false.obs;
 
   @override
   void onInit() async {
     super.onInit();
-    // final args = Get.arguments;
-    // log("===============arguments: $args==============");
-    // if (args != null) {
-    //   isCheckedIn.value = args;
-    // } else {
-    //   errorToast('Error', 'Checked in is not coming');
-    //   Get.back();
-    // }
     _loadMobileNumber();
+    // Open camera automatically after a short delay to ensure UI is ready
+    Future.delayed(const Duration(milliseconds: 300), () {
+      openCameraDirectly();
+    });
   }
 
   @override
@@ -43,6 +41,7 @@ class CheckInController extends GetxController {
     mobileNumberController.clear();
     isLoading.value = false;
     isEnable.value = false;
+    isCameraOpening.value = false;
     _loadMobileNumber();
   }
 
@@ -63,16 +62,40 @@ class CheckInController extends GetxController {
     }
   }
 
-  Future<void> pickCoolieImage() async {
+  Future<void> openCameraDirectly() async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.camera, maxWidth: 800, maxHeight: 800, imageQuality: 90);
+      isCameraOpening.value = true;
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 90,
+      );
+      
       if (image != null) {
-        coolieImage(File(image.path));
+        coolieImage.value = File(image.path);
         update();
+        
+        // Auto-validate face after image is captured
+        if (formKey != null && formKey!.currentState != null) {
+          // Small delay to ensure UI updates
+          await Future.delayed(const Duration(milliseconds: 500));
+          await validateFace(formKey!);
+        }
+      } else {
+        // User cancelled camera, go back
+        Get.back();
       }
     } catch (e) {
-      errorToast('Failed to pick image: $e');
+      errorToast('Failed to capture image: $e');
+      Get.back();
+    } finally {
+      isCameraOpening.value = false;
     }
+  }
+
+  Future<void> pickCoolieImage() async {
+    await openCameraDirectly();
   }
 
   bool get isButtonEnabled {
@@ -80,7 +103,14 @@ class CheckInController extends GetxController {
   }
 
   Future<void> validateFace(GlobalKey<FormState> formKey) async {
-    if (!formKey.currentState!.validate()) {
+    // Validate form only if mobile number field is enabled (user needs to enter it)
+    if (isEnable.value && (formKey.currentState == null || !formKey.currentState!.validate())) {
+      return;
+    }
+
+    // Validate mobile number length
+    if (mobileNumberController.text.trim().length != 10) {
+      errorToast('Please enter a valid 10-digit mobile number');
       return;
     }
 

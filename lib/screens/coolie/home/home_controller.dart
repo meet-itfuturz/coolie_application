@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:developer';
 import 'package:coolie_application/models/coolie_user_profile.dart';
 import 'package:coolie_application/routes/route_name.dart';
 import 'package:coolie_application/services/app_storage.dart';
 import 'package:coolie_application/services/app_toasting.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../models/get_passenger_coolie_model.dart';
@@ -25,6 +28,11 @@ class HomeController extends GetxController {
   final verificationCodeController = TextEditingController();
   var userProfile = Rxn<CoolieUserProfile>();
   var isLoading = false.obs;
+
+  // Check-in related variables
+  final ImagePicker _imagePicker = ImagePicker();
+  final isCheckInLoading = false.obs;
+  final checkInStatusMessage = ''.obs;
 
   // Timer variables
   final elapsedTime = '00:00'.obs;
@@ -447,6 +455,97 @@ class HomeController extends GetxController {
       return DateFormat("hh:mm a, MMM dd").format(dt);
     } catch (e) {
       return "N/A";
+    }
+  }
+
+  Future<void> performCheckIn() async {
+    try {
+      isCheckInLoading.value = true;
+      checkInStatusMessage.value = 'Opening camera...';
+      
+      // Get mobile number from storage
+      String mobileNumber = '';
+      try {
+        final userMobile = AppStorage.read("userMobile");
+        if (userMobile != null) {
+          mobileNumber = userMobile.toString();
+        }
+      } catch (e) {
+        log("Error loading mobile number: $e");
+      }
+
+      // Validate mobile number
+      if (mobileNumber.isEmpty || mobileNumber.length != 10) {
+        isCheckInLoading.value = false;
+        errorToast('Please ensure your mobile number is set correctly');
+        return;
+      }
+
+      // Open camera directly
+      checkInStatusMessage.value = 'Capturing photo...';
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 90,
+      );
+
+      if (image == null) {
+        // User cancelled camera
+        isCheckInLoading.value = false;
+        checkInStatusMessage.value = '';
+        return;
+      }
+
+      // Process face validation
+      checkInStatusMessage.value = 'Verifying your identity...';
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      final File imageFile = File(image.path);
+      final formData = dio.FormData.fromMap({
+        "mobileNo": mobileNumber.trim(),
+      });
+
+      formData.files.add(
+        MapEntry(
+          'file',
+          await dio.MultipartFile.fromFile(
+            imageFile.path,
+            filename: 'coolie_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          ),
+        ),
+      );
+
+      log("Sending Check-in request with mobile: $mobileNumber");
+      final result = await _authRepo.faceDetection(formData);
+      log("Check-in API Response: $result");
+
+      if (result != null && result['success'] == true) {
+        // Success - update check-in status
+        isCheckedIn.value = true;
+        await fetchUserProfile();
+        await getPassengerData();
+        
+        isCheckInLoading.value = false;
+        checkInStatusMessage.value = '';
+        
+        // Show success message
+        Future.delayed(const Duration(milliseconds: 300), () {
+          successToast(result['message'] ?? "Check-in successful!");
+        });
+      } else {
+        // Failure
+        isCheckInLoading.value = false;
+        checkInStatusMessage.value = '';
+        
+        final errorMessage = result?['message'] ?? "Face verification failed. Please try again.";
+        errorToast(errorMessage);
+      }
+    } catch (e) {
+      log("Error in performCheckIn: $e");
+      isCheckInLoading.value = false;
+      checkInStatusMessage.value = '';
+      errorToast('Failed to check in: ${e.toString()}');
     }
   }
 }

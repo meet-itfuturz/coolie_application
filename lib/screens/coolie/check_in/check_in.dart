@@ -17,6 +17,9 @@ class CheckIn extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<CheckInController>(
       builder: (controller) {
+        // Store form key reference in controller
+        controller.formKey = _formKey;
+        
         return Scaffold(
           resizeToAvoidBottomInset: false,
           backgroundColor: const Color(0xffF5F5F4),
@@ -30,7 +33,6 @@ class CheckIn extends StatelessWidget {
             ),
             centerTitle: true,
             title: Text(
-              // controller.isCheckedIn.value ? "Check In" : "Check Out",
               "Check In",
               style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
             ),
@@ -52,113 +54,237 @@ class CheckIn extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
-                      GestureDetector(
-                        onTap: () => controller.pickCoolieImage(),
-                        child: Obx(
-                          () => Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 12, offset: const Offset(0, 6))],
-                              gradient: LinearGradient(
-                                colors: [Colors.white.withOpacity(0.4), Colors.white.withOpacity(0.1)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: CircleAvatar(
-                              radius: 70,
-                              backgroundColor: Colors.white.withOpacity(0.2),
-                              child: controller.coolieImage.value == null
-                                  ? const Icon(Icons.add_a_photo, size: 40, color: Colors.white)
-                                  : ClipRRect(
-                                      borderRadius: BorderRadius.circular(100),
-                                      child: Image.file(controller.coolieImage.value!, width: 140, height: 140, fit: BoxFit.cover),
-                                    ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text('Tap to capture / re-take photo', style: GoogleFonts.poppins(fontSize: 14, color: Colors.white70)),
-                      SizedBox(height: 40),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-                          Form(
-                            key: _formKey,
-                            child: TextBoxWidget(
-                              enabled: controller.isEnable.value,
-                              controller: controller.mobileNumberController,
-                              hintText: 'Enter Mobile Number',
-                              labelText: 'Mobile Number',
-                              maxLength: 10,
-                              keyboardType: TextInputType.phone,
-                              onChanged: (value) {
-                                // Update button state when text changes
-                                controller.update();
-                              },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please Enter Mobile Number';
-                                } else if (value.length < 10) {
-                                  return 'Please Enter Valid Number';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                      const Spacer(),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 30),
-                        child: Obx(() {
-                          final isEnabled = controller.isButtonEnabled && !controller.isLoading.value;
-
-                          return GestureDetector(
-                            onTap: isEnabled
-                                ? () {
-                                    if (_formKey.currentState!.validate()) {
-                                      controller.validateFace(_formKey);
-                                    }
-                                  }
-                                : null,
-                            child: Container(
-                              width: double.infinity,
-                              height: 58,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: isEnabled
-                                      // ? controller.isCheckedIn.value
-                                      ? [Constants.instance.apple, Constants.instance.apple]
-                                      // : [Constants.instance.primary, Constants.instance.primary]
-                                      : [Colors.grey, Colors.grey],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
+                      const SizedBox(height: 40),
+                      // Camera Status / Preview Section
+                      Obx(() {
+                        if (controller.isCameraOpening.value) {
+                          return Container(
+                            padding: const EdgeInsets.all(40),
+                            child: Column(
+                              children: [
+                                const CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
-                                borderRadius: BorderRadius.circular(18),
-                                boxShadow: isEnabled ? [BoxShadow(color: Colors.blueAccent.withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6))] : [],
-                              ),
-                              child: Center(
-                                child: controller.isLoading.value
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                                      )
-                                    : Text(
-                                        // controller.isCheckedIn.value ? "Check In" : "Check Out",
-                                        "Check In",
-                                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1, color: Colors.white),
-                                      ),
-                              ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'Opening Camera...',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
+                          );
+                        }
+                        
+                        if (controller.coolieImage.value != null) {
+                          return Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 6),
+                                    ),
+                                  ],
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.white.withOpacity(0.4),
+                                      Colors.white.withOpacity(0.1),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 70,
+                                  backgroundColor: Colors.white.withOpacity(0.2),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(100),
+                                    child: Image.file(
+                                      controller.coolieImage.value!,
+                                      width: 140,
+                                      height: 140,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                'Processing your photo...',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        
+                        return Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.4),
+                                Colors.white.withOpacity(0.1),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 70,
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 40,
+                              color: Colors.white,
+                            ),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 40),
+                      // Mobile Number Field (hidden if mobile is pre-filled)
+                      Form(
+                        key: _formKey,
+                        child: Obx(() {
+                          if (!controller.isEnable.value) {
+                            return const SizedBox.shrink();
+                          }
+                          return TextBoxWidget(
+                            enabled: controller.isEnable.value,
+                            controller: controller.mobileNumberController,
+                            hintText: 'Enter Mobile Number',
+                            labelText: 'Mobile Number',
+                            maxLength: 10,
+                            keyboardType: TextInputType.phone,
+                            onChanged: (value) {
+                              controller.update();
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please Enter Mobile Number';
+                              } else if (value.length < 10) {
+                                return 'Please Enter Valid Number';
+                              }
+                              return null;
+                            },
                           );
                         }),
                       ),
+                      const Spacer(),
+                      // Loading Indicator
+                      Obx(() {
+                        if (controller.isLoading.value) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 30),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Constants.instance.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Verifying your identity...',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
+                      // Retake Photo Button (only show if image exists and not loading)
+                      Obx(() {
+                        if (controller.coolieImage.value != null &&
+                            !controller.isLoading.value &&
+                            !controller.isCameraOpening.value) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 30),
+                            child: GestureDetector(
+                              onTap: () => controller.pickCoolieImage(),
+                              child: Container(
+                                width: double.infinity,
+                                height: 58,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: Constants.instance.primary,
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.camera_alt,
+                                        color: Constants.instance.primary,
+                                        size: 22,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        'Retake Photo',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Constants.instance.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
                     ],
                   ),
                 ),

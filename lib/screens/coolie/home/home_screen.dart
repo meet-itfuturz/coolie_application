@@ -96,24 +96,76 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         drawer: _buildModernDrawer(controller),
-        body: RefreshIndicator(
-          onRefresh: () async {
-            await controller.fetchUserProfile();
-            await controller.getPassengerData();
-            await controller.checkStatus();
-            controller.update();
-          },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeaderSection(controller),
-                const SizedBox(height: 24),
-                _buildBookingListSection(context, controller),
-              ],
+        body: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: () async {
+                await controller.fetchUserProfile();
+                await controller.getPassengerData();
+                await controller.checkStatus();
+                controller.update();
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeaderSection(controller),
+                    const SizedBox(height: 24),
+                    _buildBookingListSection(context, controller),
+                  ],
+                ),
+              ),
             ),
-          ),
+            // Check-in Loading Overlay
+            Obx(() {
+              if (controller.isCheckInLoading.value) {
+                return Container(
+                  color: Colors.black.withOpacity(0.7),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Constants.instance.primary,
+                            ),
+                            strokeWidth: 3,
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            controller.checkInStatusMessage.value.isNotEmpty
+                                ? controller.checkInStatusMessage.value
+                                : 'Processing...',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[800],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+          ],
         ),
       ),
     );
@@ -192,14 +244,7 @@ class HomeScreen extends StatelessWidget {
                 onPressed: controller.isCheckedIn.value
                     ? null
                     : () {
-                        Get.toNamed(
-                          RouteName.checkIn,
-                          arguments: controller.isCheckedIn,
-                        )?.then(
-                          (value) => {
-                            if (value) {controller.initialize()},
-                          },
-                        );
+                        controller.performCheckIn();
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,

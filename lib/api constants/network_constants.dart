@@ -1,10 +1,11 @@
 class NetworkConstants {
   // local Urls
-  static const String baseUrl = 'https://coolie.itfuturz.in/';
-  static const String imageURL = 'https://coolie.itfuturz.in/';
+  // static const String baseUrl = 'https://hpf47sfz-2500.inc1.devtunnels.ms/';
+  // static const String imageURL = 'https://hpf47sfz-2500.inc1.devtunnels.ms/';
 
   //Production Urls
-
+  static const String baseUrl = 'https://coolie.itfuturz.in/';
+  static const String imageURL = 'https://coolie.itfuturz.in/';
   //Endpoints
 
   //   Authentications
