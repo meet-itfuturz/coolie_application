@@ -30,9 +30,6 @@ void main() async {
   await notificationService.init();
   await requestNotificationPermission();
 
-  final fcmToken = await FirebaseMessaging.instance.getToken();
-  log("FCM Token: $fcmToken");
-
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   FirebaseMessaging.onMessage.listen(_onForegroundMessage);
   FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
@@ -99,7 +96,6 @@ void _handleNotificationClick(RemoteMessage message) async {
   log("Notification data: ${message.data}");
   String? bookingId = message.data["bookingId"];
 
-
   if (bookingId != null) {
     log("Handling notification with bookingId: $bookingId");
 
@@ -163,11 +159,7 @@ class MyApp extends StatelessWidget {
         }
       },
       builder: (context, child) {
-        return SafeArea(
-          top: false,
-          bottom: true,
-          child: child ?? const SizedBox.shrink(),
-        );
+        return SafeArea(top: false, bottom: true, child: child ?? const SizedBox.shrink());
       },
     );
   }
